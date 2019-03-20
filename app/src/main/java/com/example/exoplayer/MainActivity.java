@@ -1,9 +1,16 @@
 package com.example.exoplayer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.ListPopupWindow;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -23,44 +30,40 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
+import java.util.List;
+
 
 public class MainActivity extends AppCompatActivity {
-    String url="";
-    MediaSource videoSource;
-    SimpleExoPlayer player ;
-    Context context;
+    private RecyclerView recvlerView;
+    private bofangListAdapter listAdapter;
+    private List<bofang> data;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        context=MainActivity.this;
         setContentView(R.layout.activity_main);
-        // 1.创建一个默认TrackSelector
-        DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
-        TrackSelection.Factory videoTrackSelectionFactory =
-                new AdaptiveTrackSelection.Factory(bandwidthMeter);
-        TrackSelector trackSelector =
-                new DefaultTrackSelector (videoTrackSelectionFactory);
-        // 2.创建一个默认的LoadControl
-        LoadControl loadControl = new DefaultLoadControl ();
-        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory (context,
-                Util.getUserAgent(context, "EXOPlayerTest"), bandwidthMeter);
-        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory ();
-        url="http://223.110.245.161/ott.js.chinamobile.com/PLTV/3/224/3221225868/index.m3u8";
-        //测试mp4
-        videoSource = new ExtractorMediaSource (Uri.parse(url),
-                dataSourceFactory, extractorsFactory, null, null);
-
-        // 3.创建播放器
-        player = ExoPlayerFactory.newSimpleInstance(context,trackSelector,loadControl);
-        SimpleExoPlayerView simpleExoPlayerView= (SimpleExoPlayerView) findViewById(R.id.simpleExoPlayerView);
-        // 将player关联到View上
-        simpleExoPlayerView.setPlayer(player);
-        player.prepare(videoSource);
-        // 准备player上的资源
+        initData();
+        recvlerView=findViewById(R.id.recycler);
+        listAdapter=new bofangListAdapter(this.data, new ChannelClickListener() {
+            @Override
+            public void onClick(View view, int position) {
+                Log.i("ffplay", "Clicked " + view + " on " + position);
+                if (position < data.size()) {
+                    bofang c = data.get(position);
+                    Intent intent = new Intent(MainActivity.this,liveActivity.class);
+                    intent.putExtra("bofang",c);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(MainActivity.this, "wuyongpindao", Toast.LENGTH_SHORT);
+                }
+            }
+        });
+        recvlerView.setAdapter(listAdapter);
+        recvlerView.setLayoutManager(new LinearLayoutManager(this));
     }
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        player.release();
+
+    private void initData() {
+        DataLab lab = new DataLab(this);
+        this.data = lab.getbofangs("data.json");
     }
 }
