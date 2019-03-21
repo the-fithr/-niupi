@@ -20,6 +20,7 @@ import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
@@ -34,36 +35,47 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-    private RecyclerView recvlerView;
-    private bofangListAdapter listAdapter;
-    private List<bofang> data;
-
+    String url="http://223.110.245.167/ott.js.chinamobile.com/PLTV/3/224/3221226942/index.m3u8";
+    MediaSource videoSource;
+    private DataSource.Factory factory;
+    SimpleExoPlayer player ;
+    Context context;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context=MainActivity.this;
         setContentView(R.layout.activity_main);
-        initData();
-        recvlerView=findViewById(R.id.recycler);
-        listAdapter=new bofangListAdapter(this.data, new ChannelClickListener() {
-            @Override
-            public void onClick(View view, int position) {
-                Log.i("ffplay", "Clicked " + view + " on " + position);
-                if (position < data.size()) {
-                    bofang c = data.get(position);
-                    Intent intent = new Intent(MainActivity.this,liveActivity.class);
-                    intent.putExtra("bofang",c);
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(MainActivity.this, "wuyongpindao", Toast.LENGTH_SHORT);
-                }
-            }
-        });
-        recvlerView.setAdapter(listAdapter);
-        recvlerView.setLayoutManager(new LinearLayoutManager(this));
+        // 1.创建一个默认TrackSelector
+        DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
+        TrackSelection.Factory videoTrackSelectionFactory =
+                new AdaptiveTrackSelection.Factory(bandwidthMeter);
+        TrackSelector trackSelector =
+                new DefaultTrackSelector (videoTrackSelectionFactory);
+        // 2.创建一个默认的LoadControl
+        LoadControl loadControl = new DefaultLoadControl ();
+        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory (context,
+                Util.getUserAgent(context, "EXOPlayerTest"), bandwidthMeter);
+        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory ();
+        url="http://223.110.245.167/ott.js.chinamobile.com/PLTV/3/224/3221226942/index.m3u8";
+        //测试mp4
+//        videoSource = new ExtractorMediaSource (Uri.parse(url),
+//                dataSourceFactory, extractorsFactory, null, null);
+        factory = new DefaultDataSourceFactory(this, "FF");
+        videoSource = new HlsMediaSource.Factory(factory).createMediaSource(getUri(url));
+        // 3.创建播放器
+        player = ExoPlayerFactory.newSimpleInstance(context,trackSelector,loadControl);
+        SimpleExoPlayerView simpleExoPlayerView= (SimpleExoPlayerView) findViewById(R.id.play_view);
+        // 将player关联到View上
+        simpleExoPlayerView.setPlayer(player);
+        player.setPlayWhenReady(true);
+        player.prepare(videoSource);
+        // 准备player上的资源
     }
-
-    private void initData() {
-        DataLab lab = new DataLab(this);
-        this.data = lab.getbofangs("data.json");
+    private Uri getUri(String URL) {
+        return Uri.parse(URL); }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        player.release();
     }
 }
