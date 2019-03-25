@@ -8,7 +8,21 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.net.URL;
+import java.util.List;
+
 public class ViewListAdapter extends RecyclerView.Adapter<ViewListAdapter.ViewViewHolder> {
+    public ViewListAdapter(List<com.example.exoplayer.View> data, OnItemClickListener channelClickListener) {
+        this.listener=channelClickListener;
+    }
+    OnItemClickListener listener;
+    public interface OnItemClickListener{
+        /*注意参数*/
+        public void OnItemClick(View v,int position,String id);
+    }
+    public void setOnItemClick(OnItemClickListener listener){
+        this.listener=listener;
+    }
     @NonNull
     @Override
     public ViewListAdapter.ViewViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
@@ -20,6 +34,15 @@ public class ViewListAdapter extends RecyclerView.Adapter<ViewListAdapter.ViewVi
     public void onBindViewHolder(@NonNull ViewListAdapter.ViewViewHolder viewViewHolder, int i) {
         com.example.exoplayer.View view=ViewLab.get().getView(i);
         viewViewHolder.bind(view);
+        viewViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(listener!=null){
+                    /*注意参数*/
+                    listener.OnItemClick(v,i,"1");
+                }
+            }
+        });
     }
 
     @Override

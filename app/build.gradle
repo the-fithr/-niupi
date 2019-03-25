@@ -23,6 +23,7 @@ android {
         }
     }
 }
+
 allprojects {
     repositories {
         google()
